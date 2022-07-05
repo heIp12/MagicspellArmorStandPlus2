@@ -1,0 +1,7 @@
+name: ArmorStandPlus2
+main: addon.ArmorStandPlus
+version: 1.0
+website: https://blog.naver.com/dlwhrhks01
+authors: [heIp12]
+softdepend: [MythicMobs]
+depend: [MagicSpells,ProtocolLib]

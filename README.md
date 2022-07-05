@@ -1,0 +1,2 @@
+# StandAddon
+ MagspellArmorStandPlus2
