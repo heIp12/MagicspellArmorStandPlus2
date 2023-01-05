@@ -1,5 +1,6 @@
 package armorstand.move;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.bukkit.Bukkit;
@@ -19,10 +20,12 @@ public class TargetLocMove extends ASBase{
 	boolean lockpitch = false;
 	boolean only = false;
 	LivingEntity target = null;
+	String target_type = "";
 	
 	@Override
 	public void set() {
 		super.set();
+		target_type = getValue("no-target").toUpperCase();
 		lockyaw = getBoolean("lyaw");
 		lockpitch = getBoolean("lpitch");
 		only = getBoolean("only");
@@ -38,14 +41,27 @@ public class TargetLocMove extends ASBase{
 			if(getValue("size") == null) size = 1.0f;
 			if(getValue("vsize") == null) vsize = size;
 			
-			List<LivingEntity> e = ASTarget.Cbox(armorstand.armorstand, armorstand.caster, new Vector(size,vsize,size));
+			List<LivingEntity> e = ASTarget.Cbox(armorstand.armorstand, armorstand.castPlayer, new Vector(size,vsize,size));
 			if(e == null || e.isEmpty()) run = false;
+			if(!target_type.equals("")) {
+				List<LivingEntity> removes = new ArrayList<>();
+				for(LivingEntity en : e) {
+					if(en.getType().name().equals(target_type)) {
+						removes.add(en);
+					}
+				}
+				for(LivingEntity en : removes) e.remove(en);
+				
+			}
 			if(e.size() > 0) target = e.get(0);
 			
 			if(run && target !=null) {
 				LocAndRotate lar = getLoc();
+				Location local = lar.getLocation(); 
 				Vector vtr = lar.getRotate();
-				Location loc = StandLoc.lookAt(lar.getLocation(),target.getLocation(),getDouble("p",1));
+				local.setYaw((float) lar.getRotate().getY());
+				local.setPitch((float) lar.getRotate().getX());
+				Location loc = StandLoc.lookAt(local,target.getLocation(),getDouble("p",1.0));
 				
 				if(lockyaw) {
 					loc.setYaw((float) getDouble("yaw"));

@@ -9,6 +9,7 @@ public class StandLoc {
 		EulerAngle ea = new EulerAngle(Math.toRadians(vetor.getX()), Math.toRadians(vetor.getY()), Math.toRadians(vetor.getZ()));
 		return ea;
 	}
+	
 	public static Vector toVector(EulerAngle eulerAngle) {
 		Vector vt = new Vector(Math.toDegrees(eulerAngle.getX()),Math.toDegrees(eulerAngle.getY()),Math.toDegrees(eulerAngle.getZ()));
 		return vt;
@@ -31,29 +32,40 @@ public class StandLoc {
 	
 	public static Location lookAt(Location loc,Location lookat,double p) {
 		Location floc = loc.clone();
-		Vector vt = lookat.toVector().subtract(loc.toVector());
-		loc.setDirection(vt);
-		double d = loc.getYaw() - floc.getYaw();
 		
-		for(int i=0;i<10;i++) {
-			if(d < -180) d= d+ 360;
-			if(d > 180) d= d-360;
-			if(d >= -180 && d <= 180) i = 100;
+		Vector vt = lookat.toVector().subtract(loc.toVector());
+		loc = loc.setDirection(vt);
+		double yaws = loc.getYaw() - floc.getYaw();
+		double pitch = loc.getPitch() - floc.getPitch();
+		if(p < 1) {
+			double maxrotate = 360.0*p;
+			for(;(yaws >= 180 || yaws <= -180);) {
+				if(yaws >= 180) {
+					yaws -= 180;
+					yaws *= -1;
+				}
+				if(yaws <= -180) {
+					yaws += 180;
+					yaws *= -1;
+				}
+			}
+			if(yaws > maxrotate) yaws = maxrotate;
+			if(yaws < -maxrotate) yaws = -maxrotate;
+			if(pitch > maxrotate/2) pitch = maxrotate/2;
+			if(pitch < -maxrotate/2) pitch = -maxrotate/2;
 		}
-
-		loc.setYaw((float) (floc.getYaw() + (d*p)));
+		loc.setPitch((float) (floc.getPitch() + pitch)%360);
+		loc.setYaw((float) (floc.getYaw() + yaws)%360);
 		return loc;
 	}
     
-    public static Location getRelativeLocation(Vector offset, Location point, EulerAngle angle) {
+    public static Location getRelativeLocation(Location point, Vector offset, EulerAngle angle) {
 
 		offset = rotatePitch(offset, (float) Math.toDegrees(angle.getX()));
 		offset = rotateYaw(offset, (float) Math.toDegrees(angle.getY()));
 		offset = rotateRoll(offset, (float) Math.toDegrees(angle.getZ()));
 		point.add(offset);
-		point.setYaw(0);
-		point.setPitch(0);
-		
+
 		return point;
 		
 	}

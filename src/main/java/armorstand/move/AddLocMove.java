@@ -23,10 +23,9 @@ public class AddLocMove extends ASBase{
 			LocAndRotate lar = getLoc();
 			Location loc = lar.getLocation();
 			Vector vtr = lar.getRotate();
-			
-			loc.setPitch((float) (vtr.getX() +  getDouble("pitch")));
-			loc.setYaw((float) (vtr.getY() +  getDouble("yaw")));
-			
+			loc.setYaw((float) vtr.getY());
+			vtr.setX(vtr.getX() * 2);
+			loc.setPitch((float) vtr.getX());
 			loc = StandLoc.getRelativeOffset(loc, new Vector(getDouble("x",1),getDouble("y"),getDouble("z")).multiply(getDouble("speed")));
 			
 			vtr.add(new Vector(getDouble("pitch"), getDouble("yaw"),getDouble("roll")));

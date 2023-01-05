@@ -1,7 +1,8 @@
-package armorstand;
+package armorstand.option;
 
 import addon.ArmorStandPlus;
 import addon.util.ConfigRep;
+import armorstand.ASBase;
 
 public class Delay extends ASBase{
 	

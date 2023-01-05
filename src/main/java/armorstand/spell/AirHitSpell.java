@@ -21,7 +21,9 @@ import com.nisovin.magicspells.util.ValidTargetList;
 
 import addon.ArmorStandPlus;
 import addon.util.ASTarget;
+import addon.util.StandLoc;
 import armorstand.ASBase;
+import heIpaddon.ArmorStandSpell;
 
 public class AirHitSpell extends ASBase{
 	TargetedLocationSpell spell = null;
@@ -38,8 +40,7 @@ public class AirHitSpell extends ASBase{
 			spelltick = 10;
 		}
 		
-		
-        if (spell != null && (spell instanceof TargetedLocationSpell)) {
+		if (spell != null && (spell instanceof TargetedLocationSpell)) {
         	this.spell = (TargetedLocationSpell)spell;
         } else {
         	spell = null;
@@ -54,16 +55,19 @@ public class AirHitSpell extends ASBase{
 			if(getValue("power") == null) power = 1.0f;
 			final float fpower = power;
 			
-			Location loc = getSLoc().getLocation();
-			Vector vt = getSLoc().getRotate();
+			Location loc = getLoc().getLocation();
+			Vector vt = getLoc().getRotate();
 			
 			loc.setYaw((float) (vt.getY() +  getDouble("yaw")));
-			loc.setPitch((float) (vt.getX() +  getDouble("pitch")));
+			loc.setPitch((float) ((vt.getX()*2) +  getDouble("pitch")));
+			
+			loc = StandLoc.getRelativeOffset(loc, new Vector(getDouble("x"),getDouble("y"),getDouble("z")));
 			SpellTargetLocationEvent event = new SpellTargetLocationEvent((Spell) spell, armorstand.castPlayer, loc, power);
 			Bukkit.getPluginManager().callEvent(event);
 			Location spellloc = loc.clone();
-
-			if(spell != null && !event.isCancelled()) spell.castAtLocation(armorstand.castPlayer,spellloc, fpower);
+			if(spell != null && !event.isCancelled()) {
+				spell.castAtLocation(armorstand.castPlayer,spellloc, fpower);
+			}
 			
 		}
 		return run;

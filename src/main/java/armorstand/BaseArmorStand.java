@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
@@ -30,20 +31,23 @@ public class BaseArmorStand {
 	public LivingEntity caster;
 	public Player castPlayer;
 	public ArmorStand armorstand;
+
 	public ItemStack head;
 	public ItemStack Arm;
 	public LocAndRotate startloc;
+	public LocAndRotate standLoc;
 	public int tick = 0;
+	public int delay = 2;
 	public boolean isAlive = false;
 
 	public HashMap<String,List<ASBase>> action = null;
+	public HashMap<String,List<ASBase>> repaction = null;
 	public HashMap<String,Integer> sign = null;
 	public List<BaseArmorStand> parts = null;
-	public HashMap<ArmorStand,Location> tploc;
+	public HashMap<BaseArmorStand,Location> tploc;
 	
 	public boolean caster_Armorstand = false;
 	public BaseArmorStand owner = null;
-	public boolean locrotate = false;
 	
 	public Location nextLocation;
 	public String name;
@@ -56,8 +60,8 @@ public class BaseArmorStand {
 		this.sign = new HashMap<>();
 		this.parts = new ArrayList<>();
 		this.caster = caster;
-		time = System.currentTimeMillis();
 		createArmorStand(loc);
+		time = System.currentTimeMillis() + 90;
 		isAlive = true;
 		this.castPlayer = (Player)castPlayer;
 		if(caster instanceof ArmorStand) {
@@ -67,8 +71,12 @@ public class BaseArmorStand {
 	}
 	
 	public void run() {
-		if(isAlive &&(armorstand == null || !armorstand.isValid() || armorstand.isDead())
-				|| (caster == null || !caster.isValid() || caster.isDead())) {
+		if(delay > 0) {
+			delay--;
+			return;
+		}
+		if(isAlive &&(armorstand == null || armorstand.isDead())
+				|| (caster == null || caster.isDead())) {
 			if(caster instanceof ArmorStand) {
 				remove();
 			} else {
@@ -87,7 +95,6 @@ public class BaseArmorStand {
 					}
 				}
 				tick--;
-
 				Bukkit.getScheduler().scheduleSyncDelayedTask(ArmorStandPlus.plugin, ()->{
 					if(!action.isEmpty()) {
 						for(String actions : action.keySet()) {
@@ -117,6 +124,10 @@ public class BaseArmorStand {
 							sign.remove(s);
 						}
 					}
+					if(repaction != null) {
+						action = repaction;
+						repaction = null;
+					}
 					for(BaseArmorStand as : parts) as.run();
 				});
 				
@@ -137,12 +148,13 @@ public class BaseArmorStand {
 						armorstand.setVelocity(loc.getDirection().multiply(armorstand.getLocation().distance(nextLocation)));
 					}
 					nextLocation = armorstand.getLocation().add(armorstand.getVelocity());
+					standLoc.setLocation(nextLocation);
 				}
 				Bukkit.getScheduler().scheduleSyncDelayedTask(ArmorStandPlus.plugin, ()->{
 					tploc = new HashMap<>();
 					for(BaseArmorStand as : parts)  tp(as);
-					for(ArmorStand as : tploc.keySet()) {
-						as.teleport(tploc.get(as));
+					for(BaseArmorStand as : tploc.keySet()) {
+						as.armorstand.teleport(tploc.get(as));
 					}
 				});
 			} else {
@@ -150,8 +162,8 @@ public class BaseArmorStand {
 					tploc = new HashMap<>();
 					tp(this);
 					
-					for(ArmorStand as : tploc.keySet()) {
-						as.teleport(tploc.get(as));
+					for(BaseArmorStand as : tploc.keySet()) {
+						as.armorstand.teleport(tploc.get(as));
 					}
 				});
 			}
@@ -163,8 +175,8 @@ public class BaseArmorStand {
 		for(BaseArmorStand as : a.parts) tp(as);
 		
 		if(a.nextLocation != null) {
-			tploc.put(a.armorstand,a.nextLocation);
-			a.nextLocation = null;
+			a.standLoc.setLocation(nextLocation);
+			tploc.put(a,a.nextLocation);
 		}
 	}
 	
@@ -211,6 +223,24 @@ public class BaseArmorStand {
 		}
 	}
 	
+	/*
+	public void createItem(ItemLoc loc,Material id,int data) {
+		ItemStack is = new ItemStack(id ,1,(short) data);
+		ItemMeta im = is.getItemMeta();
+		if(im != null) {
+			im.setUnbreakable(true);
+			is.setItemMeta(im);
+			if(loc == ItemLoc.HEAD) {
+				head = is;
+				armorstand.setHelmet(head);
+			}
+			if(loc == ItemLoc.HAND) {
+				Arm = is;
+				armorstand.setItemInHand(Arm);
+			}
+		}
+	}
+	*/
 	public void addParts(String name) {
 		Spell spell = MagicSpells.getSpellByInternalName(name);
 		if(spell != null && spell instanceof ArmorStandSpell) {
@@ -250,43 +280,37 @@ public class BaseArmorStand {
 	
 	public LocAndRotate getLocation(ItemLoc itemloc) {
 		Location loc = nextLocation;
-		if(loc == null) loc =  armorstand.getLocation();
-		
-		if(itemloc == ItemLoc.HAND) {
-			return new LocAndRotate(loc,StandLoc.toVector(armorstand.getRightArmPose()),itemloc);
-		} else {
-			return new LocAndRotate(loc,StandLoc.toVector(armorstand.getHeadPose()),itemloc);
+		if(loc != null) {
+			LocAndRotate lar = standLoc;
+			Vector vt = new Vector(0,0,0);
+			if(itemloc == ItemLoc.HAND) vt = StandLoc.toVector(armorstand.getRightArmPose());
+			if(itemloc == ItemLoc.HEAD) vt = StandLoc.toVector(armorstand.getHeadPose());
+			nextLocation.setPitch((float) vt.getX()/2);
+			lar.setLocation(nextLocation);
+			nextLocation.setPitch(0);
+			return lar;
 		}
-
+		return standLoc;
 	}
 	
 	public LocAndRotate getStandLocation(ItemLoc itemloc) {
 		Location loc = armorstand.getLocation();
-
-		if(itemloc == ItemLoc.HAND) {
-			return new LocAndRotate(loc,StandLoc.toVector(armorstand.getRightArmPose()),itemloc);
-		} else {
-			return new LocAndRotate(loc,StandLoc.toVector(armorstand.getHeadPose()),itemloc);
-		}
-
+		LocAndRotate lar = new LocAndRotate(loc,itemloc);
+		if(itemloc == ItemLoc.HAND) lar.setRotate(StandLoc.toVector(armorstand.getRightArmPose()));
+		if(itemloc == ItemLoc.HEAD) lar.setRotate(StandLoc.toVector(armorstand.getHeadPose()));
+		return new LocAndRotate(loc,itemloc);
 	}
 	
 	public void teleport(LocAndRotate locs) {
 		LocAndRotate loc = locs;
 		if(loc.getLocation().getChunk().isLoaded()) {
-			if(locrotate) {
-				Location local = loc.getLocation();
-				local.setYaw((float) loc.getRotate().getY());
-				local.setPitch((float) loc.getRotate().getZ());
-				setPose(loc.getItemloc(),loc.getRotate().setY(0));
-				nextLocation = local;
-			} else {
-				Location local = loc.getLocation();
-				local.setYaw(0);
-				local.setPitch(0);
-				setPose(loc.getItemloc(),loc.getRotate());
-				nextLocation = local;
-			}
+			Location local = loc.getLocation();
+			Vector vtr = loc.getRotate();
+			local.setYaw((float) vtr.getY());
+			local.setPitch((float) vtr.getZ());
+			vtr.setY(0);
+			setPose(loc.getItemloc(),vtr);
+			nextLocation = local;
 		} else {
 			ArmorStandPlus.timeSystem.removeAdd(this);
 		}
@@ -294,11 +318,12 @@ public class BaseArmorStand {
 	
 	public void setPose(ItemLoc itemloc, Vector itemRotate) {
 		if(itemloc == ItemLoc.HAND) armorstand.setRightArmPose(StandLoc.toEulerAngle(itemRotate));
-		if(itemloc == ItemLoc.HEAD)  armorstand.setHeadPose(StandLoc.toEulerAngle(itemRotate));
+		if(itemloc == ItemLoc.HEAD) armorstand.setHeadPose(StandLoc.toEulerAngle(itemRotate));
+		standLoc.setRotate(itemRotate);
 	}
 
 	public void setAction(List<String> action) {
-		this.action.clear();
+		HashMap<String, List<ASBase>> as = new HashMap<>();
 		if(action != null) {
 			for(String s : action) {
 				s = s.toLowerCase();
@@ -310,7 +335,7 @@ public class BaseArmorStand {
 				} else {
 					code = "";
 				}
-				if(this.action.get(name) == null) this.action.put(name,  new ArrayList<ASBase>());
+				if(as.get(name) == null) as.put(name,  new ArrayList<ASBase>());
 
 				if(ArmorStandPlus.asAction.getAction(type) != null) {
 					Class<? extends ASBase> abbase = ArmorStandPlus.asAction.getAction(type.toLowerCase());
@@ -318,7 +343,7 @@ public class BaseArmorStand {
 						ASBase ab = abbase.newInstance();
 						ab.setBase(this,name);
 						ab.setCode(code);
-						this.action.get(name).add(ab);
+						as.get(name).add(ab);
 					} catch (InstantiationException e) {
 						System.out.println("[MS-StandAddon] No ASBase Type : " + type);
 					} catch (IllegalAccessException e) {
@@ -328,6 +353,11 @@ public class BaseArmorStand {
 				} else {
 					System.out.println("[MS-StandAddon] Not Action Type : " + type);
 				}
+			}
+			if(this.action.size() > 0) {
+				repaction = as;
+			} else {
+				this.action = as;
 			}
 		}
 	}

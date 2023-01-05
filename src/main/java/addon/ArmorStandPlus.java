@@ -1,22 +1,30 @@
 package addon;
+//fristloc 수정함
+
 
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.ProtocolLibrary;
-import com.comphenix.protocol.events.PacketAdapter;
-import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.reflect.FieldAccessException;
-
+import addon.event.DamageSpellEvent;
 import addon.types.ASAction;
 import addon.util.AsRun;
 import armorstand.BaseArmorStand;
+import ch.njol.skript.Skript;
+import ch.njol.skript.lang.ExpressionType;
 import io.lumine.xikage.mythicmobs.mobs.MythicMob;
+import sk.SkDamageEvent;
+import sk.skECaster;
+import sk.skEDamage;
+import sk.skEDamageSet;
+import sk.skEGetType;
+import sk.skETarget;
+import sk.skEType;
 
 public class ArmorStandPlus extends JavaPlugin {
 	public static Plugin plugin;
@@ -44,34 +52,18 @@ public class ArmorStandPlus extends JavaPlugin {
 
         getServer().getPluginManager().registerEvents(new Event(this), this);
         if(MythicMobs != null) getServer().getPluginManager().registerEvents(new mmEvent(this), this);
-        ProtocolLibrary.getProtocolManager().addPacketListener(new PacketAdapter(this, PacketType.Play.Client.STEER_VEHICLE){
-
-            @Override
-            public void onPacketReceiving(PacketEvent event) {
-                if(event.isCancelled()) return;
-                Entity vehicle = event.getPlayer().getVehicle();
-                if(vehicle == null || !(vehicle instanceof ArmorStand)) return;
-                float swSpeed, fwSpeed;
-                boolean jumping;
-                boolean shift;
-                try {
-                    swSpeed = event.getPacket().getFloat().read(0)/20;
-                    fwSpeed = event.getPacket().getFloat().read(1)/5;
-                    jumping = event.getPacket().getBooleans().read(0);
-                    shift = event.getPacket().getBooleans().read(1);
-                } catch (FieldAccessException ex){
-                    ex.printStackTrace();
-                    return;
-                }
-                for(BaseArmorStand a : timeSystem.armorstands) {
-                	if(a.castPlayer == event.getPlayer()) {
-                		a.sign.put("move:"+swSpeed+","+fwSpeed+","+jumping+","+shift, 1);
-                	}
-				}
-                event.setCancelled(true);
-            }
-        });
-        
+        if (Bukkit.getPluginManager().getPlugin("Skript") != null)
+        {
+          Skript.registerAddon(this);
+          Skript.registerEvent("addon damage spell", SkDamageEvent.class, DamageSpellEvent.class, new String[] { "addon damage spell" });
+          Skript.registerExpression(skEDamage.class, Number.class, ExpressionType.PROPERTY, new String[] { "s[pell][-]damage" });
+          Skript.registerExpression(skECaster.class, Player.class, ExpressionType.PROPERTY, new String[] { "s[pell][-]caster" });
+          Skript.registerExpression(skETarget.class, LivingEntity.class, ExpressionType.PROPERTY, new String[] { "s[pell][-]target" });
+          Skript.registerExpression(skEGetType.class, String.class, ExpressionType.PROPERTY, new String[] { "s[pell][-]type" });
+          
+          Skript.registerEffect(skEDamageSet.class, new String[] { "s[pell][-]damage set %number%" });
+          Skript.registerCondition(skEType.class, new String[] { "attack type is %string%" });
+        }
 	}
 
 	@Override

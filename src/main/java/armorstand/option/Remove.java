@@ -1,8 +1,9 @@
-package armorstand;
+package armorstand.option;
 
 import addon.ArmorStandPlus;
 import addon.types.ItemLoc;
 import addon.util.ConfigRep;
+import armorstand.ASBase;
 
 public class Remove extends ASBase{
 

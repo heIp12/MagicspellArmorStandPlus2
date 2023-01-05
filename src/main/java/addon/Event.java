@@ -13,9 +13,8 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.world.ChunkUnloadEvent;
 import org.bukkit.plugin.Plugin;
 
-import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.reflect.FieldAccessException;
 import com.nisovin.magicspells.events.MagicSpellsLoadedEvent;
+import com.nisovin.magicspells.events.SpellTargetEvent;
 
 public class Event	implements Listener
 {
@@ -33,5 +32,10 @@ public class Event	implements Listener
 			
 	      ArmorStandPlus.Reset();
 	  }
-	  
+	  @EventHandler
+	  private void TargetSpell(SpellTargetEvent e) {
+		  if(e.getTarget() instanceof ArmorStand) {
+			  e.setCancelled(true);
+		  }
+	  }
 }

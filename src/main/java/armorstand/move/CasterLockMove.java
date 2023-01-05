@@ -10,7 +10,7 @@ import addon.util.LocAndRotate;
 import addon.util.StandLoc;
 import armorstand.ASBase;
 
-public class CasterLocMove extends ASBase{
+public class CasterLockMove extends ASBase{
 	boolean lockyaw = false;
 	boolean lockpitch = false;
 	
@@ -26,8 +26,11 @@ public class CasterLocMove extends ASBase{
 		boolean run = super.run();
 		if(run) {
 			LocAndRotate lar = getLoc();
-			Location loc = armorstand.castPlayer.getLocation();
+			Location loc = lar.getLocation();
 			Vector vtr = lar.getRotate();
+			
+			loc.setYaw(armorstand.castPlayer.getLocation().getYaw());
+			loc.setPitch(armorstand.castPlayer.getLocation().getPitch());
 			
 			if(lockyaw) loc.setYaw(0);
 			if(lockpitch) loc.setPitch(0);
@@ -35,11 +38,11 @@ public class CasterLocMove extends ASBase{
 			
 			loc = StandLoc.getRelativeOffset(loc, new Vector(getDouble("x"),getDouble("y"),getDouble("z")));
 			if(lar.getLocation().distance(loc) > getDouble("range",getDouble("speed"))){
-				
-				loc = StandLoc.lookAt(lar.getLocation(), loc,getDouble("p",1));
+
 				loc = loc.add(loc.getDirection().multiply(getDouble("speed")));
-				vtr = new Vector(loc.getPitch() + getDouble("pitch"),loc.getYaw() + getDouble("yaw"),vtr.getZ()+ getDouble("roll"));
+				vtr = new Vector(loc.getPitch(),loc.getYaw(),vtr.getZ());
 				lar.setLoc(loc, vtr, type);
+				
 				armorstand.teleport(lar);
 			} else {
 				lar.setLoc(loc, lar.getRotate(), type);

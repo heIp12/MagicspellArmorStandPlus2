@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
@@ -35,12 +36,12 @@ public class ArmorStandSpell extends InstantSpell implements TargetedLocationSpe
 	
 	private boolean locRelative;
 	private String locOffset;
+	private String locRotate;
 	private List<String> action;
 	private boolean rotateRelative;
 	private boolean lockpitch;
 	private boolean lockyaw;
 	private List<String> parts;
-	private boolean rotateLoc;
 	
 	public ArmorStandSpell(MagicConfig config, String spellName) {
 		super(config, spellName);
@@ -56,9 +57,9 @@ public class ArmorStandSpell extends InstantSpell implements TargetedLocationSpe
 	    this.data = getConfigString("item-data", "0");
 	    this.itemRotate = getConfigString("item-rotate", "0,0,0");
 	    this.rotateRelative = getConfigBoolean("rotate-relative", true);
-	    this.rotateLoc = getConfigBoolean("rotate-loc", false);
 	    
 	    this.locOffset = getConfigString("loc-offset", "0,0,0");
+	    this.locRotate = getConfigString("loc-rotate", "0,0,0");
 	    this.locRelative = getConfigBoolean("loc-relative", true);
 	    
 	    this.itemloc = ItemLoc.valueOf(getConfigString("item-loc", "head").toUpperCase());
@@ -68,44 +69,56 @@ public class ArmorStandSpell extends InstantSpell implements TargetedLocationSpe
 	}
 	
 	public BaseArmorStand create(LivingEntity en,LivingEntity caster, Location loc) {
+		if(lockpitch) loc.setPitch(0);
+		if(lockyaw)  loc.setYaw(0);
 		Location startloc = loc.clone();
-		if(locRelative) {
-			startloc = StandLoc.getRelativeOffset(startloc, ConfigRep.rep_Vector(locOffset,ArmorStandPlus.timeSystem.getTime()));
-		} else {
-			startloc.add(ConfigRep.rep_Vector(locOffset,ArmorStandPlus.timeSystem.getTime()));
+		if(!locRotate.equals("0,0,0")) {
+			Vector locs = ConfigRep.rep_Vector(locRotate,ArmorStandPlus.timeSystem.getTime(),caster);
+			startloc.setPitch(startloc.getPitch()+ (float) locs.getX());
+			startloc.setYaw(startloc.getYaw()+ (float) locs.getY());
 		}
+		if(locRelative) {
+			startloc = StandLoc.getRelativeOffset(startloc, ConfigRep.rep_Vector(locOffset,ArmorStandPlus.timeSystem.getTime(),caster));
+		} else {
+			startloc.add(ConfigRep.rep_Vector(locOffset,ArmorStandPlus.timeSystem.getTime(),caster));
+		}
+		
 		Vector rotate = null;
 		if(rotateRelative) {
 			Vector vtr = new Vector(loc.getPitch(),loc.getYaw(),0);
-			if(lockpitch) vtr.setX(0);
-			if(lockyaw)  vtr.setY(0);
-			vtr.add(ConfigRep.rep_Vector(itemRotate,ArmorStandPlus.timeSystem.getTime()));
-			//rotate.add(new Vector(0,vtr.getZ(),-vtr.getZ()))
+			vtr.add(ConfigRep.rep_Vector(itemRotate,ArmorStandPlus.timeSystem.getTime(),caster));
 			rotate = vtr;
 		} else {
-			rotate = ConfigRep.rep_Vector(itemRotate,ArmorStandPlus.timeSystem.getTime());
+			rotate = ConfigRep.rep_Vector(itemRotate,ArmorStandPlus.timeSystem.getTime(),caster);
 		}
-		
-
-		startloc.setYaw(0);
-		startloc.setPitch(0);
-
+		startloc.setYaw((float) rotate.getY());
 		
 		BaseArmorStand bas = new BaseArmorStand(name,en,caster,startloc);
-		bas.teleport(new LocAndRotate(startloc,rotate,itemloc));
-		bas.startloc = new LocAndRotate(startloc,rotate,itemloc);
+		bas.standLoc = new LocAndRotate(startloc,itemloc);
+		bas.teleport(bas.standLoc);
+		bas.tp();
+		bas.startloc = new LocAndRotate(bas.nextLocation,itemloc);
 		bas.setMaker(maker);
 		bas.setSize(small);
 		bas.setGravity(gravity);
-		bas.locrotate = rotateLoc;
-		bas.setTick((int) ConfigRep.rep(tick,ArmorStandPlus.timeSystem.getTime()));
-		bas.createItem(itemloc,
-				(int) ConfigRep.rep(id,ArmorStandPlus.timeSystem.getTime()),
-				(int) ConfigRep.rep(data,ArmorStandPlus.timeSystem.getTime()));
+		bas.setTick((int) ConfigRep.rep(tick,ArmorStandPlus.timeSystem.getTime(),caster));
+		
+		Bukkit.getScheduler().scheduleAsyncDelayedTask(ArmorStandPlus.plugin, ()->{
+			bas.createItem(itemloc,
+					(int) ConfigRep.rep(id,ArmorStandPlus.timeSystem.getTime(),caster),
+					(int) ConfigRep.rep(data,ArmorStandPlus.timeSystem.getTime(),caster));
+			
+			/*
+			bas.createItem(itemloc,
+					Material.getMaterial(id),
+					(int) ConfigRep.rep(data,ArmorStandPlus.timeSystem.getTime(),caster));
+			
+			*/
+		},2);
+		bas.setPose(itemloc, rotate.setY(0));
 		bas.setAction(action);
-		if(!(en instanceof ArmorStand)) {
-			ArmorStandPlus.timeSystem.Add(bas);
-		}
+		if(!(en instanceof ArmorStand)) ArmorStandPlus.timeSystem.Add(bas);
+		
 		if(parts != null) {
 			for(String s : parts){
 				bas.addParts(s);

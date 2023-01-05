@@ -1,4 +1,7 @@
-package armorstand;
+package armorstand.option;
+
+import armorstand.ASBase;
+import armorstand.BaseArmorStand;
 
 public class Signal extends ASBase{
 	int ticks = 0;

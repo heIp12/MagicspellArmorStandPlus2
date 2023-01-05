@@ -24,6 +24,7 @@ import addon.ArmorStandPlus;
 import armorstand.BaseArmorStand;
 public class ASTarget {
 	static MagicConfig mc = new MagicConfig((MagicSpells)ArmorStandPlus.MagicSpell);
+	//static MagicConfig mc = new MagicConfig();
 	
 	static public boolean isTarget(Entity target,Entity caster,Entity casterPlayer) {
 		if(target.isDead() || !target.isValid()|| target == null) return false;
@@ -31,7 +32,7 @@ public class ASTarget {
 		if(target == caster) return false;
 		if(target instanceof Player && ((Player) target).getGameMode() == GameMode.SPECTATOR) return false;
 		if(target instanceof ArmorStand) return false;
-		
+		if(!(casterPlayer instanceof Player)) return false;
 		SpellTargetEvent event = new SpellTargetEvent(new PainSpell(mc, "AddonTarget"), (Player)casterPlayer, (LivingEntity) target, 1);
 		Bukkit.getPluginManager().callEvent(event);
 		if(event.isCancelled()) return false;

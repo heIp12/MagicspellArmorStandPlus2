@@ -1,5 +1,7 @@
 package armorstand;
 
+import org.bukkit.Bukkit;
+
 import addon.ArmorStandPlus;
 import addon.types.ItemLoc;
 import addon.types.MoveType;
@@ -14,7 +16,7 @@ public class ASBase {
 	protected int tick = 100;
 	protected boolean delect = false;
 	protected MoveType type = MoveType.ALL;
-
+	protected boolean quter = false;
 	public boolean start = false;
 	public long startTime;
 	public String group = "";
@@ -36,6 +38,9 @@ public class ASBase {
 		}
 		if(getValue("move") != null && MoveType.valueOf(getValue("move").toUpperCase()) != null) {
 			type = MoveType.valueOf(getValue("move").toUpperCase());
+		}
+		if(getValue("q") != null && getValue("q").equals("true")) {
+			quter = true;
 		}
 	};
 	
@@ -78,7 +83,9 @@ public class ASBase {
 		if(iloc==null || !iloc.equals("hand")) {
 			iloc = "head";
 		}
-		return armorstand.getLocation(ItemLoc.valueOf(iloc.toUpperCase()));
+		LocAndRotate lar = armorstand.getLocation(ItemLoc.valueOf(iloc.toUpperCase()));
+		lar.setQuater(quter);
+		return lar;
 	}
 	
 	public LocAndRotate getSLoc() {
@@ -86,19 +93,21 @@ public class ASBase {
 		if(iloc==null || !iloc.equals("hand")) {
 			iloc = "head";
 		}
-		return armorstand.getStandLocation(ItemLoc.valueOf(iloc.toUpperCase()));
+		LocAndRotate lar = armorstand.getStandLocation(ItemLoc.valueOf(iloc.toUpperCase()));
+		lar.setQuater(quter);
+		return lar;
 	}
 	
 	public double getDouble(String s) {
 		if(getValue(s) != null) {
-			return ConfigRep.rep(getValue(s),ArmorStandPlus.timeSystem.getTime(startTime));
+			return ConfigRep.rep(getValue(s),ArmorStandPlus.timeSystem.getTime(startTime),armorstand.castPlayer);
 		} else {
 			return 0;
 		}
 	}
 	public double getDouble(String s,double d) {
 		if(getValue(s) != null) {
-			return ConfigRep.rep(getValue(s),ArmorStandPlus.timeSystem.getTime(startTime));
+			return ConfigRep.rep(getValue(s),ArmorStandPlus.timeSystem.getTime(startTime),armorstand.castPlayer);
 		} else {
 			return d;
 		}

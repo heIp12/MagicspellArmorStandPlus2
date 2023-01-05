@@ -1,17 +1,20 @@
-package armorstand;
+package armorstand.option;
+
+import org.bukkit.Material;
 
 import addon.ArmorStandPlus;
 import addon.types.ItemLoc;
 import addon.util.ConfigRep;
+import armorstand.ASBase;
 
-public class ItemSet extends ASBase{
+public class PlaySound extends ASBase{
 	int ticks = 0;
 	boolean onlyone;
 	boolean one = false;
 	@Override
 	public void set() {
 		super.set();
-		ticks = (int) getDouble("item-tick");
+		ticks = (int) getDouble("sound-tick",1);
 		if(ticks == 0) {
 			onlyone = true;
 		}
@@ -22,13 +25,9 @@ public class ItemSet extends ASBase{
 		boolean run = super.run();
 		if((run && !one && onlyone)|| (tick%ticks == 0 && run)) {
 			if(onlyone) one = true;
-			String iloc = getValue("loc");
-			if(iloc==null || !iloc.equals("hand")) {
-				iloc = "head";
-			}
-			ItemLoc pose = ItemLoc.valueOf(iloc.toUpperCase());
 			
-			armorstand.createItem(pose, (int)getDouble("id"), (int)getDouble("data"));
+			String iloc = getValue("sound");
+			armorstand.armorstand.getWorld().playSound(armorstand.armorstand.getLocation(), iloc, (float)getDouble("sound-size",1), (float)getDouble("sound-pitch",1));
 		}
 		return run;
 	}
