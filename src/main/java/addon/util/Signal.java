@@ -84,7 +84,7 @@ public class Signal {
 	public static List<BaseArmorStand> F_Range(List<BaseArmorStand> stands,Location loc, float range) {
 		List<BaseArmorStand> removeStands = new ArrayList<BaseArmorStand>();
 		for(BaseArmorStand stand : stands) {
-			if(stand.armorstand.getLocation().distance(loc) <= range) {
+			if(stand.armorstand.getLocation().distance(loc) >= range) {
 				removeStands.add(stand);
 			}
 		}
@@ -96,7 +96,7 @@ public class Signal {
 	public static List<BaseArmorStand> F_BRange(List<BaseArmorStand> stands,Location loc, float range) {
 		List<BaseArmorStand> removeStands = new ArrayList<BaseArmorStand>();
 		for(BaseArmorStand stand : stands) {
-			if(stand.armorstand.getLocation().distance(loc) >= range) {
+			if(stand.armorstand.getLocation().distance(loc) <= range) {
 				removeStands.add(stand);
 			}
 		}
@@ -108,7 +108,7 @@ public class Signal {
 	public static List<BaseArmorStand> F_Name(List<BaseArmorStand> stands,String name) {
 		List<BaseArmorStand> removeStands = new ArrayList<BaseArmorStand>();
 		for(BaseArmorStand stand : stands) {
-			if(stand.name.contains(name)) {
+			if(!stand.name.contains(name)) {
 				removeStands.add(stand);
 			}
 		}
